@@ -16,23 +16,20 @@ sub msg {
 
 
 sub handle_on_exec {
-    my ($term, $line, $selection) = @_;
+    my ($term, $line) = @_;
 
     print "handling exec()\n";
-    my $line = sprintf($line, $selection);
     $term->exec_async($line);
 }
 
 sub handle_on_menu {
-    my ($term, $line, $selection) = @_;
+    my ($term, $line) = @_;
 
     print "handling menu()\n";
 }
 
 sub handle_on_send {
-    my ($term, $line, $selection) = @_;
-
-    $line = sprintf($line, $selection);
+    my ($term, $line) = @_;
 
     my $octets = $term->locale_encode($line);
     $term->tt_write($octets);
@@ -50,26 +47,27 @@ sub build_menu {
         next if (/^(#.*|\s*)$/);
 
         # /regex/ "title" cmd and args...
-        if (/^(.*)\s+"(.*)"\s+(.*)/x) {
-            my ($regex, $title, $rest) = ($1, $2, $3);
+        if (/^(.*)\s+(".*")\s+(exec|send|menu)\s+(".*")/x) {
+            my ($regex, $display, $cmd, $line) = ($1, $2, $3, $4);
 
-            print "[$regex] [$title] [$rest]\n";
+            print "[$regex] [$display] [$cmd] [$line]\n";
 
             # test the $regex against the $selection ##XXX not working
             if ($selection !~ /$regex/ && $regex ne "MATCHALL" ) {
-		next;
+	        next;
 	    }
-	    
 
-            # extract the cmd and line
-            my ($cmd, $line) = split(/\s/, $rest, 2);
+            # prepare the cmd line for the handler
+            my $cmdline = eval ( $line );
 
-            my $display = sprintf($title, $selection);
-            substr $display, 40, -1, "..." if 40 < length $display;
+            # prepare the display string for the option
+            my $title = eval ( $display );
 
-            $popup->add_button($display,
+            substr $title, 40, -1, "..." if 40 < length $title;
+
+            $popup->add_button($title,
                 sub {
-                    $handlers{$cmd}->($term, $line, $selection)
+                    $handlers{$cmd}->($term, $cmdline, $selection)
                 }
             );
         }

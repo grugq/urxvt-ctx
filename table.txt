@@ -1,7 +1,8 @@
 #
 # /regex/  "title goes here"   exec|send|menu args go here 
 
-MATCHALL "nmap %s" send nmap -sS -n -v -P0 %s
-http "wget %s" send wget --continue -v %s
+MATCHALL "nmap $selection" send "nmap -sS -n -v -P0 $selection"
+http|ftp "wget $selection" send "wget --continue -v $selection"
+(\w\.\w):(\d+) "netcat $1:$2" send "nc -vv $1 $2"
 ----
-MATCHALL "open" exec open %s
+MATCHALL "open" exec "open $selection"
