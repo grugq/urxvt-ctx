@@ -1,5 +1,6 @@
 #! perl
-
+use Data::Dumper;
+### Easier to visualize data structs with dd.  "print Dumper($var);" to use.. ###
 my %handlers;
 
 
@@ -41,7 +42,12 @@ sub build_menu {
             print "[$regex] [$title] [$rest]\n";
 
             # test the $regex against the $selection ##XXX not working
-            #next if ($selection !~ /\Q$regex/);
+            if ($selection !~ /\Q$regex/) {
+		print "Matching..\n";
+	    } else {
+		print "Not matching...\n";
+	    }
+	    
 
             # extract the cmd and line
             my ($cmd, $line) = split(/\s/, $rest, 2);
