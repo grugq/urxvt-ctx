@@ -17,10 +17,14 @@ terminal from the current directory with current `table.txt`
 
 The format for the `table.txt` is currently:
 
-/regular expression/  "title for menu"  exec|send|menu cmd line args %s
+regular expression  "title for menu"  exec|send|menu cmd line args %s
+
+/regular expression/ - (Not enclosed in `/`) either the word `MATCHALL`
+or a regular expression. If it is a regular expression then the option
+will only appear if the regex matches the selection.
 
 * `exec` - execute a program, e.g. `firefox -url %s`
 * `send` - send text to the terminal input, e.g. `nmap -sS -n -v %s`
 * `menu` - construct a sub-menu for the popup w/ the content from somewhere
 
-This is ... aspirational. Nothing works yet. 
+This is ... aspirational. Little works yet. 

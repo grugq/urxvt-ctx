@@ -32,8 +32,10 @@ sub handle_on_menu {
 sub handle_on_send {
     my ($term, $line, $selection) = @_;
 
-    my $line = sprintf($line, $selection);
-    $term->tt_write($line)
+    $line = sprintf($line, $selection);
+
+    my $octets = $term->locale_encode($line);
+    $term->tt_write($octets);
 }
 
 $handlers{exec} = \&handle_on_exec;
