@@ -2,7 +2,7 @@ URxvt Contextual Execution
 --------------------------
 
 Provides a right-click menu that is dynamically generated from the "table.txt"
-content, combined with the selection in the termanal.
+content, combined with the selection in the terminal.
 
 Requires:
 ========
