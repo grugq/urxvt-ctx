@@ -20,8 +20,12 @@ The format for the `table.txt` is currently:
 regular expression  "title for menu"  exec|send|menu cmd line args %s
 
 /regular expression/ - (Not enclosed in `/`) either the word `MATCHALL`
-or a regular expression. If it is a regular expression then the option
-will only appear if the regex matches the selection.
+or a regular expression. If a regular expression then the corresponding
+option will only appear if it matches the selection.
+
+"title" - a title line that'll appear in the menu, with an optional %s
+that will be replaced by the selection text. NOTE: This line can be a
+maximum of 40 chars long. 
 
 * `exec` - execute a program, e.g. `firefox -url %s`
 * `send` - send text to the terminal input, e.g. `nmap -sS -n -v %s`
