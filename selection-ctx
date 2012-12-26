@@ -1,5 +1,6 @@
 #! perl
-
+use Data::Dumper;
+### Easier to visualize data structs with dd.  "print Dumper($var);" to use.. ###
 my %handlers;
 
 sub msg {
@@ -18,7 +19,8 @@ sub handle_on_exec {
     my ($term, $line, $selection) = @_;
 
     print "handling exec()\n";
-    #$term->exec_async($line)
+    my $line = sprintf($line, $selection);
+    $term->exec_async($line);
 }
 
 sub handle_on_menu {
@@ -46,13 +48,16 @@ sub build_menu {
         next if (/^(#.*|\s*)$/);
 
         # /regex/ "title" cmd and args...
-        if (/^(\/.*\/)\s+"(.*)"\s+(.*)/x) {
+        if (/^(.*)\s+"(.*)"\s+(.*)/x) {
             my ($regex, $title, $rest) = ($1, $2, $3);
 
             print "[$regex] [$title] [$rest]\n";
 
             # test the $regex against the $selection ##XXX not working
-            #next if ($selection !~ /\Q$regex/);
+            if ($selection !~ /$regex/) {
+		next;
+	    }
+	    
 
             # extract the cmd and line
             my ($cmd, $line) = split(/\s/, $rest, 2);
