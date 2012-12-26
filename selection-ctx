@@ -2,17 +2,6 @@
 
 my %handlers;
 
-sub msg {
-   my ($self, $msg) = @_;
-
-   my $overlay = $self->overlay (0, 0, $self->strwidth ($msg), 1);
-   $overlay->set (0, 0, $msg);
-   my $iow; $iow = urxvt::timer->new->after (1)->cb (sub {
-      undef $overlay;
-      undef $iow;
-   });
-}
-
 
 sub handle_on_exec {
     my ($term, $line, $selection) = @_;
@@ -112,64 +101,5 @@ sub on_button_press {
    $popup->show;
 
    return 1;
-
-      my $add_button = sub {
-         my ($title, $cb) = @_;
-
-         $popup->add_button ($title => sub {
-            for ($text) {
-               my $orig = $_;
-               $cb->();
-
-               if ($orig ne $_) {
-                  $self->selection ($_);
-                  s/[\x00-\x1f\x80-\x9f]/·/g;
-                  $self->msg ($self->special_encode ($_));
-               }
-            }
-         });
-      };
-
-      for ($text) {
-         /\n/
-            and $add_button->("newlines to spaces" => sub { y/\n/ / });
-
-         /./
-            and $add_button->("rot13" => sub { y/A-Za-z/N-ZA-Mn-za-m/ });
-
-         /./
-            and $add_button->("eval perl expression" => sub { my $self = $self; no warnings; $_ = eval $_; $_ = "$@" if $@ });
-
-         /./
-            and $add_button->((sprintf "to unicode hex index (%x)", ord) => sub { $_ = sprintf "%x", ord });
-
-         /(\S+):(\d+):?/
-            and $add_button->("vi-commands to load '$1'" => sub { s/^(\S+):(\d+):?$/\x1b:e $1\x0d:$2\x0d/ });
-
-         /%[0-9a-fA-F]{2}/ && !/%[^0-9a-fA-F]/ && !/%.[^0-9a-fA-F]/
-            and $add_button->("uri unescape" => sub { s/%([0-9a-fA-F]{2})/chr hex $1/ge });
-
-         /[\\"'\ \t|&;<>()]/
-            and $add_button->("shell quote" => sub { $_ = "\Q$_" });
-
-         /^(https?|ftp|telnet|irc|news):\//
-            and $add_button->("run $self->{browser}" => sub { $self->exec_async ($self->{browser}, $_) });
-
-         for my $hook (@{ $self->{term}{selection_popup_hook} || [] }) {
-            if (my ($title, $cb) = $hook->($popup)) {
-               $add_button->($title, $cb);
-            }
-         }
-
-         if (/^\s*((?:0x)?\d+)\s*$/) {
-            $popup->add_title (sprintf "%20s", eval $1);
-            $popup->add_title (sprintf "%20s", sprintf "0x%x", eval $1);
-            $popup->add_title (sprintf "%20s", sprintf "0%o", eval $1);
-         }
-      }
-
-      $popup->show;
-
-      return 1;
 }
 
