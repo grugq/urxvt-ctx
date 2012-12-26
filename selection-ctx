@@ -2,6 +2,17 @@
 
 my %handlers;
 
+sub msg {
+   my ($self, $msg) = @_;
+
+   my $overlay = $self->overlay (0, 0, $self->strwidth ($msg), 1);
+   $overlay->set (0, 0, $msg);
+   my $iow; $iow = urxvt::timer->new->after (1)->cb (sub {
+      undef $overlay;
+      undef $iow;
+   });
+}
+
 
 sub handle_on_exec {
     my ($term, $line, $selection) = @_;
@@ -94,6 +105,8 @@ sub on_button_press {
    $popup->add_separator;
    # } 
 
+   # e.g.: ~/.Xresources URxvt.context-menu: ~/.urxvt.ctx-menu
+   # $fname = $self->x_resource("context-menu");
    open(my $fh, "<", "table.txt") or die "well that didnt work: $!";
 
    build_menu($self, $popup, $fh, $text);
