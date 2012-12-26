@@ -43,7 +43,7 @@ sub build_menu {
             print "[$regex] [$title] [$rest]\n";
 
             # test the $regex against the $selection ##XXX not working
-            if ($selection !~ /$regex/) {
+            if ($selection !~ /$regex/ && $regex ne "MATCHALL" ) {
 		next;
 	    }
 	    

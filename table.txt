@@ -1,7 +1,7 @@
 #
 # /regex/  "title goes here"   exec|send|menu args go here 
 
-(.*) "nmap %s" send nmap -sS -n -v -P0 %s
+MATCHALL "nmap %s" send nmap -sS -n -v -P0 %s
 http "wget %s" send wget --continue -v %s
 ----
-(.*) "open" exec open %s
+MATCHALL "open" exec open %s
