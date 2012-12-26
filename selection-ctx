@@ -30,8 +30,8 @@ sub handle_on_menu {
 sub handle_on_send {
     my ($term, $line, $selection) = @_;
 
-    print "handling send($line)\n";
-    $term->tt_write($line)
+    my $tosend = sprintf($line, $selection);
+    $term->tt_write($tosend)
 }
 
 $handlers{exec} = \&handle_on_exec;
@@ -57,7 +57,14 @@ sub build_menu {
             # extract the cmd and line
             my ($cmd, $line) = split(/\s/, $rest, 2);
 
-            $popup->add_button($title, sub { $handlers{$cmd}->($term, $line, $selection) });
+            my $display = sprintf($title, $selection);
+            substr $display, 40, -1, "..." if 40 < length $display;
+
+            $popup->add_button($display,
+                sub {
+                    $handlers{$cmd}->($term, $line, $selection)
+                }
+            );
         }
         # dashes
         elsif ($_ =~ /^-+/) {
