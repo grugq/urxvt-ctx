@@ -1,0 +1,168 @@
+#! perl
+
+my %handlers;
+
+sub msg {
+   my ($self, $msg) = @_;
+
+   my $overlay = $self->overlay (0, 0, $self->strwidth ($msg), 1);
+   $overlay->set (0, 0, $msg);
+   my $iow; $iow = urxvt::timer->new->after (1)->cb (sub {
+      undef $overlay;
+      undef $iow;
+   });
+}
+
+
+sub handle_on_exec {
+    my ($term, $line, $selection) = @_;
+
+    print "handling exec()\n";
+    #$term->exec_async($line)
+}
+
+sub handle_on_menu {
+    my ($term, $line, $selection) = @_;
+
+    print "handling menu()\n";
+}
+
+sub handle_on_send {
+    my ($term, $line, $selection) = @_;
+
+    print "handling send($line)\n";
+    $term->tt_write($line)
+}
+
+$handlers{exec} = \&handle_on_exec;
+$handlers{menu} = \&handle_on_menu;
+$handlers{send} = \&handle_on_send;
+
+sub build_menu {
+    my ($term, $popup, $fh, $selection) = @_;
+
+    while (<$fh>) {
+        # comment, blank or spaces
+        next if (/^(#.*|\s*)$/);
+
+        # /regex/ "title" cmd and args...
+        if (/^(\/.*\/)\s+"(.*)"\s+(.*)/x) {
+            my ($regex, $title, $rest) = ($1, $2, $3);
+
+            print "[$regex] [$title] [$rest]\n";
+
+            # test the $regex against the $selection ##XXX not working
+            #next if ($selection !~ /\Q$regex/);
+
+            # extract the cmd and line
+            my ($cmd, $line) = split(/\s/, $rest, 2);
+
+            $popup->add_button($title, sub { $handlers{$cmd}->($term, $line, $selection) });
+        }
+        # dashes
+        elsif ($_ =~ /^-+/) {
+             $popup->add_separator;
+        }
+    }
+}
+
+sub on_start {
+   my ($self) = @_;
+
+   $self->{browser} = $self->x_resource ("urlLauncher") || "sensible-browser";
+
+   $self->grab_button (3);
+
+   ()
+}
+
+sub on_button_press {
+   my ($self, $event) = @_;
+
+   if ($event->{button} != 3) {
+     return ();
+   }
+
+   my $popup = $self->popup ($event)
+      or return 1;
+
+   $popup->add_title ("Contextual Execution");
+
+   # set the title {
+   my $text = $self->selection;
+
+   my $title = $text;
+   $title =~ s/[\x00-\x1f\x80-\x9f]/·/g;
+   substr $title, 40, -1, "..." if 40 < length $title;
+   $popup->add_title ($title);
+   $popup->add_separator;
+   # } 
+
+   open(my $fh, "<", "table.txt") or die "well that didnt work: $!";
+
+   build_menu($self, $popup, $fh, $text);
+
+   $popup->show;
+
+   return 1;
+
+      my $add_button = sub {
+         my ($title, $cb) = @_;
+
+         $popup->add_button ($title => sub {
+            for ($text) {
+               my $orig = $_;
+               $cb->();
+
+               if ($orig ne $_) {
+                  $self->selection ($_);
+                  s/[\x00-\x1f\x80-\x9f]/·/g;
+                  $self->msg ($self->special_encode ($_));
+               }
+            }
+         });
+      };
+
+      for ($text) {
+         /\n/
+            and $add_button->("newlines to spaces" => sub { y/\n/ / });
+
+         /./
+            and $add_button->("rot13" => sub { y/A-Za-z/N-ZA-Mn-za-m/ });
+
+         /./
+            and $add_button->("eval perl expression" => sub { my $self = $self; no warnings; $_ = eval $_; $_ = "$@" if $@ });
+
+         /./
+            and $add_button->((sprintf "to unicode hex index (%x)", ord) => sub { $_ = sprintf "%x", ord });
+
+         /(\S+):(\d+):?/
+            and $add_button->("vi-commands to load '$1'" => sub { s/^(\S+):(\d+):?$/\x1b:e $1\x0d:$2\x0d/ });
+
+         /%[0-9a-fA-F]{2}/ && !/%[^0-9a-fA-F]/ && !/%.[^0-9a-fA-F]/
+            and $add_button->("uri unescape" => sub { s/%([0-9a-fA-F]{2})/chr hex $1/ge });
+
+         /[\\"'\ \t|&;<>()]/
+            and $add_button->("shell quote" => sub { $_ = "\Q$_" });
+
+         /^(https?|ftp|telnet|irc|news):\//
+            and $add_button->("run $self->{browser}" => sub { $self->exec_async ($self->{browser}, $_) });
+
+         for my $hook (@{ $self->{term}{selection_popup_hook} || [] }) {
+            if (my ($title, $cb) = $hook->($popup)) {
+               $add_button->($title, $cb);
+            }
+         }
+
+         if (/^\s*((?:0x)?\d+)\s*$/) {
+            $popup->add_title (sprintf "%20s", eval $1);
+            $popup->add_title (sprintf "%20s", sprintf "0x%x", eval $1);
+            $popup->add_title (sprintf "%20s", sprintf "0%o", eval $1);
+         }
+      }
+
+      $popup->show;
+
+      return 1;
+}
+
