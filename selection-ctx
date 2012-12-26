@@ -30,8 +30,8 @@ sub handle_on_menu {
 sub handle_on_send {
     my ($term, $line, $selection) = @_;
 
-    my $tosend = sprintf($line, $selection);
-    $term->tt_write($tosend)
+    my $line = sprintf($line, $selection);
+    $term->tt_write($line)
 }
 
 $handlers{exec} = \&handle_on_exec;
